@@ -1,8 +1,10 @@
 import { Body, Controller, Get, Headers, Post, Query } from '@nestjs/common';
 import { ShareService } from './share.service';
-import { errorBody, successBody } from '../common/utils';
+import { errorBody, successBody, hashMd5 } from '../common/utils';
 import { TokenService } from '../token/token.service';
 import { randomUUID } from 'crypto';
+import { uploadStreamToQiniu } from '../common/qiniu';
+import { QINIU_BUCKET_URL } from 'src/common/constants';
 
 @Controller('share')
 export class ShareController {
@@ -44,9 +46,25 @@ export class ShareController {
 
     try {
       const shareId = body.shareId || randomUUID().replace(/-/g, '');
-      // TODO: upload fileData and fileName to QINIU CDN
-      await this.shareService.updateShareFile({ ...body, shareId, creatorId });
-      return successBody({ shareId, creatorId });
+      const directory = hashMd5(`${creatorId}${new Date().getTime()}`);
+      const path = `${directory}/${fileName}`;
+      try {
+        const upload = await uploadStreamToQiniu(path, fileData);
+        if (upload) {
+          const url = `${QINIU_BUCKET_URL}/${path}`;
+          await this.shareService.updateShareFile({
+            ...body,
+            shareId,
+            creatorId,
+            url,
+          });
+          return successBody({ shareId, creatorId });
+        } else {
+          return errorBody('文件上传失败');
+        }
+      } catch {
+        return errorBody('文件上传失败');
+      }
     } catch (e) {
       return errorBody(`add new share file error ${e.message}`);
     }

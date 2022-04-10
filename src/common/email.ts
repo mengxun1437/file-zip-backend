@@ -1,4 +1,4 @@
-import { EMAIL_CONFIG } from './constrants';
+import { EMAIL_CONFIG } from './constants';
 const nodemailer = require('nodemailer');
 
 export interface SendEmailOptions {

@@ -5,7 +5,7 @@ import { UserController } from './user/user.controller';
 import { UserService } from './user/user.service';
 import { UserModule } from './user/user.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { MYSQL_CONNECT_CONFIG } from './common/constrants';
+import { MYSQL_CONNECT_CONFIG } from './common/constants';
 import { EmailController } from './email/email.controller';
 import { EmailModule } from './email/email.module';
 import { EmailService } from './email/email.service';

@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
 export enum GetShareState {
+  SUCCESS = 0,
   NOT_EXIST = 1,
   OUT_EXPIRED = 2,
   CAN_NOT_DOWNLOAD = 3,
@@ -46,23 +47,29 @@ export class ShareService {
       // 将基本信息放在info字段中
       _default.exist = true;
       _default.detail = dbShare;
-      // 处理后返回
-      const newInfo = { ...dbShare };
-      delete newInfo.password;
-      newInfo.fileInfo = JSON.parse(newInfo.fileInfo);
-      _default.info = newInfo;
 
       if (dbShare.expired && new Date().getTime() > dbShare.expired) {
         _default.state = GetShareState.OUT_EXPIRED;
       } else {
-        if (dbShare.downloadTimes !== -1 && dbShare.downloadTimes === 0) {
+        if (dbShare.downloadTimes === 0) {
           _default.state = GetShareState.CAN_NOT_DOWNLOAD;
         } else {
           if (dbShare.password) {
             _default.state = GetShareState.HAS_PASSWORD;
+          }else{
+              _default.state =  GetShareState.SUCCESS
           }
         }
       }
+
+       // 处理后返回
+       const newInfo = { ...dbShare };
+       delete newInfo.password;
+       newInfo.fileInfo = JSON.parse(newInfo.fileInfo);
+       if(_default.state !== GetShareState.SUCCESS){
+           delete newInfo.url
+       }
+       _default.info = newInfo;
     }
 
     return _default;
