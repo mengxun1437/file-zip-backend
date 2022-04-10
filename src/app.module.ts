@@ -12,6 +12,9 @@ import { EmailService } from './email/email.service';
 import { TokenService } from './token/token.service';
 import { TokenModule } from './token/token.module';
 import { TokenController } from './token/token.controller';
+import { ShareController } from './share/share.controller';
+import { ShareService } from './share/share.service';
+import { ShareModule } from './share/share.module';
 
 @Module({
   imports: [
@@ -19,8 +22,21 @@ import { TokenController } from './token/token.controller';
     UserModule,
     EmailModule,
     TokenModule,
+    ShareModule,
   ],
-  controllers: [AppController, UserController, EmailController,TokenController],
-  providers: [AppService, UserService, EmailService, TokenService],
+  controllers: [
+    AppController,
+    UserController,
+    EmailController,
+    TokenController,
+    ShareController,
+  ],
+  providers: [
+    AppService,
+    UserService,
+    EmailService,
+    TokenService,
+    ShareService,
+  ],
 })
 export class AppModule {}
