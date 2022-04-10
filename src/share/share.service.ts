@@ -65,10 +65,8 @@ export class ShareService {
        // 处理后返回
        const newInfo = { ...dbShare };
        delete newInfo.password;
+       delete newInfo.url
        newInfo.fileInfo = JSON.parse(newInfo.fileInfo);
-       if(_default.state !== GetShareState.SUCCESS){
-           delete newInfo.url
-       }
        _default.info = newInfo;
     }
 

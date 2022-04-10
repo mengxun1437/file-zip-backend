@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Headers, Post, Query } from '@nestjs/common';
-import { ShareService } from './share.service';
+import { GetShareState, ShareService } from './share.service';
 import { errorBody, successBody, hashMd5 } from '../common/utils';
 import { TokenService } from '../token/token.service';
 import { randomUUID } from 'crypto';
@@ -15,14 +15,38 @@ export class ShareController {
 
   // 获取一个文件的信息
   @Get('/')
-  async getShareFileInfo(@Query('shareId') shareId) {
+  async getShareFileInfo(@Query('shareId') shareId, @Body() body) {
     if (!shareId) return errorBody('shareId参数缺失');
+    const { password } = body;
     try {
-      const shareInfo = await this.shareService.getShare(shareId);
-      return successBody({
-        state: shareInfo.state,
-        info: shareInfo.info,
-      });
+      const share = await this.shareService.getShare(shareId);
+      const returnBody = {
+        state: share.state,
+        info: share.info,
+      };
+      if (share.state === GetShareState.NOT_EXIST)
+        return successBody(returnBody, '文件资源不存在');
+      if (share.state === GetShareState.OUT_EXPIRED)
+        return successBody(returnBody, '文件资源已经过期');
+      if (share.state === GetShareState.CAN_NOT_DOWNLOAD)
+        return successBody(returnBody, '超出文件可下载次数');
+      if (share.state === GetShareState.HAS_PASSWORD) {
+        // 如果文件有密码,但是body中没有传密码的时候,无法获取url
+        if (!password) {
+          return successBody(returnBody, '该文件需要密码');
+        }
+        if (password !== share.detail.password) {
+          return successBody(returnBody, '密码错误');
+        } else {
+          returnBody.info.url = share.detail.url;
+        }
+      }
+
+      // 如果校验通过,获取数据,返回对象为
+      if (share.state === GetShareState.SUCCESS) {
+        returnBody.info.url = share.detail.url;
+      }
+      return successBody(returnBody, '获取文件url成功');
     } catch (e) {
       return errorBody(`get share fileInfo error ${e.message}`);
     }
