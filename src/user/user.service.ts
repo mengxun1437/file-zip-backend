@@ -12,14 +12,35 @@ interface UserInfo {
   password?: string;
 }
 
+export interface GetUser {
+  exist: boolean;
+  detail: User | undefined;
+}
+
+export interface CheckedUser extends GetUser {
+  checked: boolean;
+}
+
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>
+    private readonly userRepository: Repository<User>,
   ) {}
 
-  async getUser(email) {
+  // 判断邮箱和密码是否匹配
+  async checkUser({ email, password }) {
+    const user = await this.getUser(email);
+    const _user: CheckedUser = { ...user, checked: false };
+    if (!user.exist) {
+      _user.checked = false;
+    } else {
+      _user.checked = user.detail.password === hashMd5(password);
+    }
+    return _user;
+  }
+
+  async getUser(email): Promise<GetUser> {
     const _default = {
       exist: false,
       detail: null,

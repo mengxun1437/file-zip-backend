@@ -2,15 +2,29 @@ import { Body, Controller, Post } from '@nestjs/common';
 import { errorBody, successBody } from '../common/utils';
 import { UserService } from './user.service';
 import { EmailService } from '../email/email.service';
+import { TokenService } from '../token/token.service';
 
 @Controller('user')
 export class UserController {
   constructor(
     private readonly userService: UserService,
     private readonly emailService: EmailService,
+    private readonly tokenService: TokenService,
   ) {}
+
+  // 生成token
+  async generateToken({ userId, email, password }) {
+    const token = this.tokenService.generateToken({ email, password });
+    await this.tokenService.updateToken({ userId, token });
+    return {
+      userId,
+      email,
+      token,
+    };
+  }
+
   @Post('/')
-  async AddNewUser(@Body() body) {
+  async addNewUser(@Body() body) {
     try {
       const { email, checkCode, password, nickName } = body;
       if (!email || !checkCode || !password) {
@@ -29,9 +43,35 @@ export class UserController {
         password,
         nickName,
       });
-      return successBody(addInfo, '注册用户成功');
+      const tokenInfo = await this.generateToken({
+        userId: addInfo.userId,
+        email,
+        password,
+      });
+      return successBody(tokenInfo, '注册用户成功');
     } catch (e) {
       return errorBody(`add user failed ${e.message}`);
     }
   }
+
+  @Post('/login')
+  async userLogin(@Body() body) {
+    try {
+      const { email, password } = body;
+      if (!email || !password) return errorBody('必要参数缺失');
+      const checkedUser = await this.userService.checkUser({ email, password });
+      if (!checkedUser.checked) return errorBody('用户密码错误');
+
+      // 登录成功以后,更新token,返回用户信息
+      const tokenInfo = await this.generateToken({
+        userId: checkedUser.detail.userId,
+        email,
+        password,
+      });
+      return successBody(tokenInfo, '登录成功');
+    } catch (e) {
+      return errorBody(`user login error ${e.message}`);
+    }
+  }
+
 }
