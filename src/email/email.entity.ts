@@ -6,7 +6,7 @@ import { Column, Entity, PrimaryColumn, PrimaryGeneratedColumn } from 'typeorm';
 export class Email {
   @PrimaryGeneratedColumn()
   id: number;
-  @PrimaryColumn({ nullable: false, unique: true })
+  @Column({ nullable: false, unique: true })
   email: string;
   @Column()
   checkCode: number;
