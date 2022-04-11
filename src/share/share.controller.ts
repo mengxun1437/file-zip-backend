@@ -53,7 +53,7 @@ export class ShareController {
   }
 
   @Post('/')
-  async addNewShareFile(@Body() body, @Headers() headers) {
+  async updateShareFile(@Body() body, @Headers() headers) {
     const checkedHd = await this.tokenService.checkTokenValid(headers);
     if (!checkedHd.checked) {
       return {
@@ -62,33 +62,38 @@ export class ShareController {
         data: checkedHd,
       };
     }
-    const { fileData, fileName } = body;
-    if (!fileData || !fileName) {
+    const { fileData, fileName, action } = body;
+    if (action === 'add' && (!fileData || !fileName)) {
       return errorBody('必要参数缺失,请检查 fileData,fileName');
     }
     const creatorId = headers.userid;
 
     try {
       const shareId = body.shareId || randomUUID().replace(/-/g, '');
-      const directory = hashMd5(`${creatorId}${new Date().getTime()}`);
-      const path = `${directory}/${fileName}`;
-      try {
-        const upload = await uploadStreamToQiniu(path, fileData);
-        if (upload) {
-          const url = `${QINIU_BUCKET_URL}/${path}`;
-          await this.shareService.updateShareFile({
-            ...body,
-            shareId,
-            creatorId,
-            url,
-          });
-          return successBody({ shareId, creatorId });
-        } else {
+      let url = '';
+      if (action === 'add') {
+        const directory = hashMd5(`${creatorId}${new Date().getTime()}`);
+        const path = `${directory}/${fileName}`;
+        try {
+          const upload = await uploadStreamToQiniu(path, fileData);
+          if (upload) {
+            url = `${QINIU_BUCKET_URL}/${path}`;
+          } else {
+            return errorBody('文件上传失败');
+          }
+        } catch {
           return errorBody('文件上传失败');
         }
-      } catch {
-        return errorBody('文件上传失败');
       }
+      await this.shareService.updateShareFile({
+        ...{
+          ...body,
+          shareId,
+          creatorId,
+        },
+        ...(action === 'add' ? { url } : {}),
+      });
+      return successBody({ shareId, creatorId });
     } catch (e) {
       return errorBody(`add new share file error ${e.message}`);
     }
