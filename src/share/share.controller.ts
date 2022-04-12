@@ -14,10 +14,10 @@ export class ShareController {
   ) {}
 
   // 获取一个文件的信息
-  @Get('/')
-  async getShareFileInfo(@Query('shareId') shareId, @Body() body) {
+  @Post('/')
+  async getShareFileInfo( @Body() body) {
+    const { shareId,password } = body;
     if (!shareId) return errorBody('shareId参数缺失');
-    const { password } = body;
     try {
       const share = await this.shareService.getShare(shareId);
       const returnBody = {
@@ -38,6 +38,7 @@ export class ShareController {
         if (password !== share.detail.password) {
           return successBody(returnBody, '密码错误');
         } else {
+          returnBody.state = GetShareState.SUCCESS
           returnBody.info.url = share.detail.url;
         }
       }
