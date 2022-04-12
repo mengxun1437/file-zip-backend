@@ -21,7 +21,7 @@ export class EmailController {
       };
       await this.emailService.updateEmail(option);
       await this.emailService.sendEmail(option);
-      return successBody({ checkCode });
+      return successBody();
     } catch (e) {
       return errorBody(`请求验证码错误 ${e.message}`);
     }
