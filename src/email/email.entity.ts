@@ -9,7 +9,7 @@ export class Email {
   @Column({ nullable: false, unique: true })
   email: string;
   @Column()
-  checkCode: number;
+  checkCode: string;
   @Column('bigint')
   created: number;
   @Column('bigint')

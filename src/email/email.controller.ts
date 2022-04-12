@@ -14,7 +14,7 @@ export class EmailController {
     }
     try {
       // 生成六位数验证码
-      const checkCode = Number(Math.random().toString().slice(-6));
+      const checkCode = Math.random().toString().slice(-6);
       const option = {
         email: body.email,
         checkCode,
