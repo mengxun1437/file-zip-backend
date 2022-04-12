@@ -14,9 +14,10 @@ export class ShareController {
   ) {}
 
   // 获取一个文件的信息
-  @Post('/')
-  async getShareFileInfo( @Body() body) {
+  @Post('/file')
+  async getShareFileInfo(@Body() body) {
     const { shareId,password } = body;
+    
     if (!shareId) return errorBody('shareId参数缺失');
     try {
       const share = await this.shareService.getShare(shareId);
@@ -38,7 +39,6 @@ export class ShareController {
         if (password !== share.detail.password) {
           return successBody(returnBody, '密码错误');
         } else {
-          returnBody.state = GetShareState.SUCCESS
           returnBody.info.url = share.detail.url;
         }
       }
@@ -68,6 +68,7 @@ export class ShareController {
       return errorBody('必要参数缺失,请检查 fileData,fileName');
     }
     const creatorId = headers.userid;
+    console.log(fileData,fileName,body)
 
     try {
       const shareId = body.shareId || randomUUID().replace(/-/g, '');
