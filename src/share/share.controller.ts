@@ -1,10 +1,11 @@
-import { Body, Controller, Get, Headers, Post, Query } from '@nestjs/common';
+import { Body, Controller, Headers, Post } from '@nestjs/common';
 import { GetShareState, ShareService } from './share.service';
 import { errorBody, successBody, hashMd5 } from '../common/utils';
 import { TokenService } from '../token/token.service';
 import { randomUUID } from 'crypto';
 import { uploadStreamToQiniu } from '../common/qiniu';
 import { QINIU_BUCKET_URL } from 'src/common/constants';
+import * as fs from 'fs';
 
 @Controller('share')
 export class ShareController {
@@ -16,8 +17,8 @@ export class ShareController {
   // 获取一个文件的信息
   @Post('/file')
   async getShareFileInfo(@Body() body) {
-    const { shareId,password } = body;
-    
+    const { shareId, password } = body;
+
     if (!shareId) return errorBody('shareId参数缺失');
     try {
       const share = await this.shareService.getShare(shareId);
@@ -63,12 +64,14 @@ export class ShareController {
         data: checkedHd,
       };
     }
-    const { fileData, fileName, action } = body;
-    if (action === 'add' && (!fileData || !fileName)) {
-      return errorBody('必要参数缺失,请检查 fileData,fileName');
+    const { fileName, action, fileData } = body;
+    if (action === 'add' && (!fileName || !fileData)) {
+      return errorBody('必要参数缺失,请检查 fileName,fileData');
     }
     const creatorId = headers.userid;
-    console.log(fileData,fileName,body)
+
+    const data = fileData.split(';')?.[1]?.split(',')[1] || '';
+    const base64Buffer = Buffer.from(data, 'base64');
 
     try {
       const shareId = body.shareId || randomUUID().replace(/-/g, '');
@@ -76,8 +79,12 @@ export class ShareController {
       if (action === 'add') {
         const directory = hashMd5(`${creatorId}${new Date().getTime()}`);
         const path = `${directory}/${fileName}`;
+        if (!fs.existsSync(directory)) {
+          fs.mkdirSync(directory);
+        }
+        fs.writeFileSync(path, base64Buffer);
         try {
-          const upload = await uploadStreamToQiniu(path, fileData);
+          const upload = await uploadStreamToQiniu(path, path);
           if (upload) {
             url = `${QINIU_BUCKET_URL}/${path}`;
           } else {
