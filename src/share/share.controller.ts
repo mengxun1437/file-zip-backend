@@ -12,7 +12,7 @@ export class ShareController {
   constructor(
     private readonly shareService: ShareService,
     private readonly tokenService: TokenService,
-  ) {}
+  ) { }
 
   // 获取一个文件的信息
   @Post('/file')
@@ -70,7 +70,7 @@ export class ShareController {
     }
     const creatorId = headers.userid;
 
-    const data = fileData.split(';')?.[1]?.split(',')[1] || '';
+    const data = fileData?.split(';')?.[1]?.split(',')[1] || '';
     const base64Buffer = Buffer.from(data, 'base64');
 
     try {
